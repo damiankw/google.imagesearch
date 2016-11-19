@@ -1,20 +1,32 @@
+<?php
 /* GISearch.php
  * requires DOMDocument
  * requires php7.0-XML
  * -
  * Searches Google and returns a random image for your search string
+ * -
+ * Example:
+ * $i = new gisearch("kittens on a piano");
+ * echo '<a href="'. $i->get_source() .'"><img src="'. $i->get_link() .'" /> '. $i->get_title() .'</a>';
  */
 
 class gisearch {
-  public $SRC;
-  public $TITLE;
-  
-  // is_json: checks if string is JSON or not
-  function is_json($TEXT) {
-    json_decode($TEXT);
-    return (json_last_error() == JSON_ERROR_NONE);
+  private $SRC;
+  private $LINK;
+  private $TITLE;
+
+  // $i = new gisearch(<search string>): searches Google for the image and sets internal variables
+  function __construct($SEARCH) {
+    // find the image
+    $IMAGE = $this->select_image($SEARCH);
+    
+    // set up the internal variables
+    $this->SRC = $IMAGE['src'];      // source website
+    $this->LINK = $IMAGE['link'];    // url of the image
+    $this->TITLE = $IMAGE['title'];  // title of the image
   }
   
+  // get_images(<search string>): gets a list of all images from Google Image Search
   function get_images($SEARCH) {
     // set up http options
     $HTTP_OPTS = Array(
@@ -25,7 +37,8 @@ class gisearch {
       )
     );
     $HTTP_CONTEXT = stream_context_create($HTTP_OPTS);
-    // set up the URL
+    
+    // set up the URL (by default, this searches images of a 'Large' type)
     $URL = "https://www.google.com.au/search?q=". urlencode($SEARCH) ."&source=lnms&tbm=isch&biw=1440&bih=770";
   
     // grab the HTML
@@ -62,11 +75,12 @@ class gisearch {
   
       // push the detail we need into another Array for use later
       $IMAGES[] = Array(
-        'src' => $IMAGE['ou'],
+        'link' => $IMAGE['ou'],
         'title' => $IMAGE['s'],
-        'link' => $IMAGE['ru']
+        'src' => $IMAGE['ru']
       );
     }
+
     // output the list of images
     return $IMAGES;
   }
@@ -77,15 +91,27 @@ class gisearch {
     
     // select a random image
     $IMAGE = $IMAGES[rand(1, sizeof($IMAGES))];
+    
     // return the image
     return $IMAGE;
   }
   
-  function __construct($SEARCH) {
-    $IMAGE = $this->select_image($SEARCH);
-    
-    $this->SRC = $IMAGE['src'];
-    $this->LINK = $IMAGE['link'];
-    $this->TITLE = $IMAGE['title'];
+  function get_source() {
+    return $this->SRC;
+  }
+  
+  function get_link() {
+    return $this->LINK;
+  }
+  
+  function get_title() {
+    return $this->TITLE;
+  }
+  
+  // is_json(<text>): checks if string is JSON or not
+  function is_json($TEXT) {
+    json_decode($TEXT);
+    return (json_last_error() == JSON_ERROR_NONE);
   }
 }
+?>
